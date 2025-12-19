@@ -23,7 +23,17 @@ A Model Context Protocol (MCP) server that provides video and audio manipulation
 
 ## Installation
 
+### From npm (recommended)
+
 ```bash
+npm install -g ffmpeg-mcp-server
+```
+
+### From source
+
+```bash
+git clone https://github.com/PedroMarianoAlmeida/ffmpeg-mcp
+cd ffmpeg-mcp
 npm install
 npm run build
 ```
@@ -38,8 +48,8 @@ Add to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "ffmpeg": {
-      "command": "node",
-      "args": ["/absolute/path/to/ffmpeg-mcp/build/index.js"]
+      "command": "npx",
+      "args": ["ffmpeg-mcp-server"]
     }
   }
 }
@@ -53,8 +63,8 @@ Add to your Claude Code MCP settings:
 {
   "mcpServers": {
     "ffmpeg": {
-      "command": "node",
-      "args": ["/absolute/path/to/ffmpeg-mcp/build/index.js"]
+      "command": "npx",
+      "args": ["ffmpeg-mcp-server"]
     }
   }
 }

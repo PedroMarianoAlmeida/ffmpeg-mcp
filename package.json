@@ -1,7 +1,8 @@
 {
-  "name": "ffmpeg-mcp",
+  "name": "ffmpeg-mcp-server",
   "version": "1.0.0",
   "description": "MCP server for FFmpeg video operations",
+  "mcpName": "io.github.PedroMarianoAlmeida/ffmpeg",
   "type": "module",
   "bin": {
     "ffmpeg-mcp": "./build/index.js"
@@ -12,6 +13,10 @@
   "files": [
     "build"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PedroMarianoAlmeida/ffmpeg-mcp"
+  },
   "author": "Pedro Almeida",
   "license": "MIT",
   "dependencies": {

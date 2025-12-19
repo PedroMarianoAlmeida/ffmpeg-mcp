@@ -1,0 +1,18 @@
+{
+  "$schema": "https://registry.modelcontextprotocol.io/schemas/server.json",
+  "name": "io.github.PedroMarianoAlmeida/ffmpeg",
+  "description": "FFmpeg video and audio manipulation tools for AI assistants. Supports cutting, converting, concatenating videos, removing silence, and raw FFmpeg commands.",
+  "repository": {
+    "url": "https://github.com/PedroMarianoAlmeida/ffmpeg-mcp",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "ffmpeg-mcp-server",
+      "version": "1.0.0",
+      "transport": ["stdio"]
+    }
+  ]
+}
