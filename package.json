@@ -2,7 +2,7 @@
   "name": "ffmpeg-mcp-server",
   "version": "1.0.0",
   "description": "MCP server for FFmpeg video operations",
-  "mcpName": "io.github.PedroMarianoAlmeida/ffmpeg",
+  "mcpName": "io.github.PedroMarianoAlmeida/ffmpeg-mcp",
   "type": "module",
   "bin": {
     "ffmpeg-mcp": "./build/index.js"
