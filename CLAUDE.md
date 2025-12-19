@@ -32,3 +32,4 @@ FFmpeg MCP Server - provides video manipulation tools via Model Context Protocol
 - `cut_video` - Extract segment from video (startTime + duration)
 - `image_to_video` - Convert static image to video with fixed duration
 - `concat_videos` - Join multiple videos into one
+- `remove_silence` - Detect and remove silent segments from video (uses silencedetect + trim/concat)

@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { cutVideo, imageToVideo, concatVideos } from "./lib.js";
+import { cutVideo, imageToVideo, concatVideos, removeSilence } from "./lib.js";
 
 const server = new McpServer({
   name: "ffmpeg",
@@ -114,6 +114,69 @@ server.registerTool(
           {
             type: "text",
             text: `Failed to concatenate videos: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Tool: Remove silence from video
+server.registerTool(
+  "remove_silence",
+  {
+    description:
+      "Detect and remove silent segments from a video, keeping only non-silent parts",
+    inputSchema: {
+      inputPath: z.string().describe("Path to input video file"),
+      outputPath: z.string().describe("Path for output video file"),
+      noiseThreshold: z
+        .string()
+        .default("-30dB")
+        .describe("Audio level threshold for silence detection (e.g., '-30dB')"),
+      minSilenceDuration: z
+        .number()
+        .positive()
+        .default(2)
+        .describe("Minimum duration in seconds to consider as silence"),
+    },
+  },
+  async ({ inputPath, outputPath, noiseThreshold, minSilenceDuration }) => {
+    try {
+      const result = await removeSilence(
+        inputPath,
+        outputPath,
+        noiseThreshold,
+        minSilenceDuration
+      );
+
+      const silenceCount = result.silenceIntervals.length;
+      const silenceDetails =
+        silenceCount > 0
+          ? result.silenceIntervals
+              .map(
+                (s) =>
+                  `${s.start.toFixed(2)}s - ${s.end.toFixed(2)}s`
+              )
+              .join(", ")
+          : "none";
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Silence removed successfully: ${outputPath}\nSilent segments found (${silenceCount}): ${silenceDetails}`,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Failed to remove silence: ${
               error instanceof Error ? error.message : String(error)
             }`,
           },
