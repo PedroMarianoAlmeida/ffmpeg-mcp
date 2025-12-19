@@ -1,244 +1,185 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegStatic from "ffmpeg-static";
 
-const NWS_API_BASE = "https://api.weather.gov";
-const USER_AGENT = "weather-app/1.0";
+// Set ffmpeg path
+ffmpeg.setFfmpegPath(ffmpegStatic as unknown as string);
 
-// Create server instance
 const server = new McpServer({
-  name: "weather",
+  name: "ffmpeg",
   version: "1.0.0",
 });
 
-// Helper function for making NWS API requests
-async function makeNWSRequest<T>(url: string): Promise<T | null> {
-  const headers = {
-    "User-Agent": USER_AGENT,
-    Accept: "application/geo+json",
-  };
-
-  try {
-    const response = await fetch(url, { headers });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return (await response.json()) as T;
-  } catch (error) {
-    console.error("Error making NWS request:", error);
-    return null;
-  }
+// Helper to promisify ffmpeg commands
+function runFfmpeg(command: ffmpeg.FfmpegCommand): Promise<string> {
+  return new Promise((resolve, reject) => {
+    command
+      .on("end", () => resolve("Success"))
+      .on("error", (err) => reject(err))
+      .run();
+  });
 }
 
-interface AlertFeature {
-  properties: {
-    event?: string;
-    areaDesc?: string;
-    severity?: string;
-    status?: string;
-    headline?: string;
-  };
-}
-
-// Format alert data
-function formatAlert(feature: AlertFeature): string {
-  const props = feature.properties;
-  return [
-    `Event: ${props.event || "Unknown"}`,
-    `Area: ${props.areaDesc || "Unknown"}`,
-    `Severity: ${props.severity || "Unknown"}`,
-    `Status: ${props.status || "Unknown"}`,
-    `Headline: ${props.headline || "No headline"}`,
-    "---",
-  ].join("\n");
-}
-
-interface ForecastPeriod {
-  name?: string;
-  temperature?: number;
-  temperatureUnit?: string;
-  windSpeed?: string;
-  windDirection?: string;
-  shortForecast?: string;
-}
-
-interface AlertsResponse {
-  features: AlertFeature[];
-}
-
-interface PointsResponse {
-  properties: {
-    forecast?: string;
-  };
-}
-
-interface ForecastResponse {
-  properties: {
-    periods: ForecastPeriod[];
-  };
-}
-
-// Register weather tools
-
+// Tool: Cut video segment
 server.registerTool(
-  "get_alerts",
+  "cut_video",
   {
-    description: "Get weather alerts for a state",
+    description: "Extract a segment from a video file",
     inputSchema: {
-      state: z
-        .string()
-        .length(2)
-        .describe("Two-letter state code (e.g. CA, NY)"),
+      inputPath: z.string().describe("Path to input video file"),
+      outputPath: z.string().describe("Path for output video file"),
+      startTime: z.string().describe("Start time (e.g., '00:01:30' or '90')"),
+      duration: z.string().describe("Duration (e.g., '00:00:30' or '30')"),
     },
   },
-  async ({ state }) => {
-    const stateCode = state.toUpperCase();
-    const alertsUrl = `${NWS_API_BASE}/alerts?area=${stateCode}`;
-    const alertsData = await makeNWSRequest<AlertsResponse>(alertsUrl);
+  async ({ inputPath, outputPath, startTime, duration }) => {
+    try {
+      const command = ffmpeg(inputPath)
+        .setStartTime(startTime)
+        .setDuration(duration)
+        .output(outputPath);
 
-    if (!alertsData) {
+      await runFfmpeg(command);
+
       return {
         content: [
           {
             type: "text",
-            text: "Failed to retrieve alerts data",
+            text: `Video cut successfully: ${outputPath}`,
           },
         ],
       };
-    }
-
-    const features = alertsData.features || [];
-    if (features.length === 0) {
+    } catch (error) {
       return {
         content: [
           {
             type: "text",
-            text: `No active alerts for ${stateCode}`,
+            text: `Failed to cut video: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
       };
     }
-
-    const formattedAlerts = features.map(formatAlert);
-    const alertsText = `Active alerts for ${stateCode}:\n\n${formattedAlerts.join(
-      "\n"
-    )}`;
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: alertsText,
-        },
-      ],
-    };
   }
 );
 
+// Tool: Convert image to video with fixed duration
 server.registerTool(
-  "get_forecast",
+  "image_to_video",
   {
-    description: "Get weather forecast for a location",
+    description: "Convert a static image to a video with fixed duration",
     inputSchema: {
-      latitude: z
-        .number()
-        .min(-90)
-        .max(90)
-        .describe("Latitude of the location"),
-      longitude: z
-        .number()
-        .min(-180)
-        .max(180)
-        .describe("Longitude of the location"),
+      imagePath: z.string().describe("Path to input image file"),
+      outputPath: z.string().describe("Path for output video file"),
+      duration: z.number().positive().describe("Duration in seconds"),
+      fps: z.number().positive().default(30).describe("Frames per second"),
     },
   },
-  async ({ latitude, longitude }) => {
-    // Get grid point data
-    const pointsUrl = `${NWS_API_BASE}/points/${latitude.toFixed(
-      4
-    )},${longitude.toFixed(4)}`;
-    const pointsData = await makeNWSRequest<PointsResponse>(pointsUrl);
+  async ({ imagePath, outputPath, duration, fps }) => {
+    try {
+      const command = ffmpeg(imagePath)
+        .loop(duration)
+        .inputOptions(["-framerate", String(fps)])
+        .outputOptions([
+          "-c:v libx264",
+          "-t",
+          String(duration),
+          "-pix_fmt yuv420p",
+          "-vf",
+          `scale=trunc(iw/2)*2:trunc(ih/2)*2`, // Ensure even dimensions
+        ])
+        .output(outputPath);
 
-    if (!pointsData) {
+      await runFfmpeg(command);
+
       return {
         content: [
           {
             type: "text",
-            text: `Failed to retrieve grid point data for coordinates: ${latitude}, ${longitude}. This location may not be supported by the NWS API (only US locations are supported).`,
+            text: `Image converted to video: ${outputPath} (${duration}s at ${fps}fps)`,
           },
         ],
       };
-    }
-
-    const forecastUrl = pointsData.properties?.forecast;
-    if (!forecastUrl) {
+    } catch (error) {
       return {
         content: [
           {
             type: "text",
-            text: "Failed to get forecast URL from grid point data",
+            text: `Failed to convert image: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
       };
     }
+  }
+);
 
-    // Get forecast data
-    const forecastData = await makeNWSRequest<ForecastResponse>(forecastUrl);
-    if (!forecastData) {
+// Tool: Concatenate videos
+server.registerTool(
+  "concat_videos",
+  {
+    description: "Concatenate multiple videos into one",
+    inputSchema: {
+      inputPaths: z
+        .array(z.string())
+        .min(2)
+        .describe("Array of video file paths to concatenate"),
+      outputPath: z.string().describe("Path for output video file"),
+    },
+  },
+  async ({ inputPaths, outputPath }) => {
+    try {
+      const command = ffmpeg();
+
+      // Add all inputs
+      inputPaths.forEach((path) => {
+        command.input(path);
+      });
+
+      // Use concat filter
+      const filterInputs = inputPaths
+        .map((_, i) => `[${i}:v][${i}:a]`)
+        .join("");
+      command
+        .complexFilter([
+          `${filterInputs}concat=n=${inputPaths.length}:v=1:a=1[outv][outa]`,
+        ])
+        .outputOptions(["-map", "[outv]", "-map", "[outa]"])
+        .output(outputPath);
+
+      await runFfmpeg(command);
+
       return {
         content: [
           {
             type: "text",
-            text: "Failed to retrieve forecast data",
+            text: `Videos concatenated successfully: ${outputPath}`,
           },
         ],
       };
-    }
-
-    const periods = forecastData.properties?.periods || [];
-    if (periods.length === 0) {
+    } catch (error) {
       return {
         content: [
           {
             type: "text",
-            text: "No forecast periods available",
+            text: `Failed to concatenate videos: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
           },
         ],
       };
     }
-
-    // Format forecast periods
-    const formattedForecast = periods.map((period: ForecastPeriod) =>
-      [
-        `${period.name || "Unknown"}:`,
-        `Temperature: ${period.temperature || "Unknown"}°${
-          period.temperatureUnit || "F"
-        }`,
-        `Wind: ${period.windSpeed || "Unknown"} ${period.windDirection || ""}`,
-        `${period.shortForecast || "No forecast available"}`,
-        "---",
-      ].join("\n")
-    );
-
-    const forecastText = `Forecast for ${latitude}, ${longitude}:\n\n${formattedForecast.join(
-      "\n"
-    )}`;
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: forecastText,
-        },
-      ],
-    };
   }
 );
 
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Weather MCP Server running on stdio");
+  console.error("FFmpeg MCP Server running on stdio");
 }
 
 main().catch((error) => {
