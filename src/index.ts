@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { cutVideo, imageToVideo, concatVideos, removeSilence } from "./lib.js";
+import { cutVideo, imageToVideo, concatVideos, convert, ffmpegRaw, removeSilence } from "./lib.js";
 
 const server = new McpServer({
   name: "ffmpeg",
@@ -123,6 +123,53 @@ server.registerTool(
   }
 );
 
+// Tool: Convert media formats
+server.registerTool(
+  "convert",
+  {
+    description:
+      "Convert media between formats (audio-to-audio, video-to-video, or video-to-audio). Format is auto-detected from file extension.",
+    inputSchema: {
+      inputPath: z.string().describe("Path to input media file"),
+      outputPath: z
+        .string()
+        .describe("Path for output file (extension determines format)"),
+      audioBitrate: z
+        .string()
+        .optional()
+        .describe("Audio bitrate (e.g., '192k', '320k')"),
+      videoBitrate: z
+        .string()
+        .optional()
+        .describe("Video bitrate (e.g., '2M', '5M')"),
+    },
+  },
+  async ({ inputPath, outputPath, audioBitrate, videoBitrate }) => {
+    try {
+      await convert(inputPath, outputPath, audioBitrate, videoBitrate);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Converted successfully: ${outputPath}`,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Failed to convert: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          },
+        ],
+      };
+    }
+  }
+);
+
 // Tool: Remove silence from video
 server.registerTool(
   "remove_silence",
@@ -177,6 +224,46 @@ server.registerTool(
           {
             type: "text",
             text: `Failed to remove silence: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Tool: Raw FFmpeg command
+server.registerTool(
+  "ffmpeg_raw",
+  {
+    description:
+      "Execute a raw FFmpeg command with custom arguments. Use this for advanced operations not covered by other tools (e.g., filters, effects, watermarks, speed changes).",
+    inputSchema: {
+      args: z
+        .array(z.string())
+        .describe(
+          "Array of FFmpeg arguments (e.g., ['-i', 'input.mp4', '-vf', 'scale=1280:720', 'output.mp4'])"
+        ),
+    },
+  },
+  async ({ args }) => {
+    try {
+      const result = await ffmpegRaw(args);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `FFmpeg command completed:\n${result}`,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `FFmpeg command failed: ${
               error instanceof Error ? error.message : String(error)
             }`,
           },

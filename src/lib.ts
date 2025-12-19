@@ -79,6 +79,60 @@ export async function concatVideos(
   return outputPath;
 }
 
+export async function ffmpegRaw(args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(ffmpegPath, args);
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on("close", (code) => {
+      if (code === 0) {
+        resolve(stdout || stderr || "Command completed successfully");
+      } else {
+        reject(new Error(`FFmpeg exited with code ${code}: ${stderr}`));
+      }
+    });
+
+    proc.on("error", reject);
+  });
+}
+
+export async function convert(
+  inputPath: string,
+  outputPath: string,
+  audioBitrate?: string,
+  videoBitrate?: string
+): Promise<string> {
+  const command = ffmpeg(inputPath);
+
+  const outputOptions: string[] = [];
+
+  if (audioBitrate) {
+    outputOptions.push("-b:a", audioBitrate);
+  }
+
+  if (videoBitrate) {
+    outputOptions.push("-b:v", videoBitrate);
+  }
+
+  if (outputOptions.length > 0) {
+    command.outputOptions(outputOptions);
+  }
+
+  command.output(outputPath);
+
+  await runFfmpeg(command);
+  return outputPath;
+}
+
 interface SilenceInterval {
   start: number;
   end: number;
