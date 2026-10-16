@@ -5,7 +5,7 @@ import { cutVideo, imageToVideo, concatVideos, convert, ffmpegRaw, removeSilence
 
 const server = new McpServer({
   name: "ffmpeg",
-  version: "1.0.0",
+  version: "1.0.3",
 });
 
 // Tool: Cut video segment
@@ -276,7 +276,7 @@ server.registerTool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("FFmpeg MCP Server v1.0.0 running on stdio");
+  console.error("FFmpeg MCP Server v1.0.3 running on stdio");
 }
 
 main().catch((error) => {
