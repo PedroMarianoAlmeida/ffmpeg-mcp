@@ -8,7 +8,7 @@ A Model Context Protocol (MCP) server that provides video and audio manipulation
 - **Format conversion** - Convert between audio/video formats (mp4, mp3, wav, mov, etc.)
 - **Video editing** - Cut segments, concatenate multiple videos, convert images to video
 - **Audio processing** - Detect and remove silent segments automatically
-- **Flexible** - Raw FFmpeg command support for advanced operations
+- **Local by default** - Inputs and outputs stay inside a configured workspace
 
 ## Available Tools
 
@@ -19,7 +19,7 @@ A Model Context Protocol (MCP) server that provides video and audio manipulation
 | `concat_videos` | Join multiple videos into one |
 | `convert` | Convert between media formats (auto-detects from file extension) |
 | `remove_silence` | Detect and remove silent segments from video |
-| `ffmpeg_raw` | Execute raw FFmpeg commands for advanced operations |
+| `ffmpeg_raw` | Run a restricted local FFmpeg command |
 
 ## Installation
 
@@ -39,6 +39,28 @@ npm run build
 ```
 
 ## Configuration
+
+### Workspace and safety
+
+Every input and output must be inside `FFMPEG_MCP_WORKSPACE`. If it is unset, the server's current working directory is used. The server resolves symlinks before reading and rejects URL schemes, traversal outside the workspace, and symlink outputs. Create output directories before running a tool.
+
+`ffmpeg_raw` is deliberately restricted. It accepts local `-i` inputs, one final local output path, and a small set of codec and timing options. It does not accept filters, forced formats, or arbitrary FFmpeg flags because those options can load extra files or use network protocols.
+
+For example, set a dedicated media directory in your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "ffmpeg": {
+      "command": "npx",
+      "args": ["ffmpeg-mcp-server"],
+      "env": {
+        "FFMPEG_MCP_WORKSPACE": "/absolute/path/to/media-workspace"
+      }
+    }
+  }
+}
+```
 
 ### Claude Desktop
 
@@ -91,12 +113,10 @@ Add to your Claude Code MCP settings:
 → Uses remove_silence tool (detects silence > 2s at -30dB by default)
 ```
 
-### Advanced operations
+### Restricted raw operations
 ```
-"Add a watermark to my video"
-"Speed up the video 2x"
-"Rotate video 90 degrees"
-→ Uses ffmpeg_raw tool with AI-constructed FFmpeg commands
+"Convert input.mp4 to output.mp4 using libx264"
+→ Uses ffmpeg_raw with local paths and supported codec options
 ```
 
 ## Development

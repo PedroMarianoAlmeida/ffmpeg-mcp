@@ -5,7 +5,7 @@ import { cutVideo, imageToVideo, concatVideos, convert, ffmpegRaw, removeSilence
 
 const server = new McpServer({
   name: "ffmpeg",
-  version: "1.0.0",
+  version: "1.0.3",
 });
 
 // Tool: Cut video segment
@@ -33,6 +33,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -71,6 +72,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -110,6 +112,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -157,6 +160,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -220,6 +224,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -238,12 +243,12 @@ server.registerTool(
   "ffmpeg_raw",
   {
     description:
-      "Execute a raw FFmpeg command with custom arguments. Use this for advanced operations not covered by other tools (e.g., filters, effects, watermarks, speed changes).",
+      "Run a restricted local FFmpeg command. Inputs and the final output must be workspace paths; network protocols, filters, and arbitrary FFmpeg options are not supported.",
     inputSchema: {
       args: z
         .array(z.string())
         .describe(
-          "Array of FFmpeg arguments (e.g., ['-i', 'input.mp4', '-vf', 'scale=1280:720', 'output.mp4'])"
+          "Limited FFmpeg arguments, for example ['-i', 'input.mp4', '-c:v', 'libx264', 'output.mp4']"
         ),
     },
   },
@@ -260,6 +265,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -276,7 +282,7 @@ server.registerTool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("FFmpeg MCP Server v1.0.0 running on stdio");
+  console.error("FFmpeg MCP Server v1.0.3 running on stdio");
 }
 
 main().catch((error) => {
