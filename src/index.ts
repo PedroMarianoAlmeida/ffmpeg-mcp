@@ -33,6 +33,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -71,6 +72,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -110,6 +112,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -157,6 +160,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -220,6 +224,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -260,6 +265,7 @@ server.registerTool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
