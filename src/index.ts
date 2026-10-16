@@ -238,12 +238,12 @@ server.registerTool(
   "ffmpeg_raw",
   {
     description:
-      "Execute a raw FFmpeg command with custom arguments. Use this for advanced operations not covered by other tools (e.g., filters, effects, watermarks, speed changes).",
+      "Run a restricted local FFmpeg command. Inputs and the final output must be workspace paths; network protocols, filters, and arbitrary FFmpeg options are not supported.",
     inputSchema: {
       args: z
         .array(z.string())
         .describe(
-          "Array of FFmpeg arguments (e.g., ['-i', 'input.mp4', '-vf', 'scale=1280:720', 'output.mp4'])"
+          "Limited FFmpeg arguments, for example ['-i', 'input.mp4', '-c:v', 'libx264', 'output.mp4']"
         ),
     },
   },
