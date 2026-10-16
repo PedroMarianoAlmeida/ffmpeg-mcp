@@ -5,7 +5,7 @@
   "mcpName": "io.github.PedroMarianoAlmeida/ffmpeg-mcp",
   "type": "module",
   "bin": {
-    "ffmpeg-mcp": "./build/index.js"
+    "ffmpeg-mcp": "build/index.js"
   },
   "scripts": {
     "build": "tsc && chmod 755 build/index.js"
@@ -15,7 +15,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/PedroMarianoAlmeida/ffmpeg-mcp"
+    "url": "git+https://github.com/PedroMarianoAlmeida/ffmpeg-mcp.git"
   },
   "author": "Pedro Almeida",
   "license": "MIT",
