@@ -137,3 +137,9 @@ src/
 ## License
 
 MIT
+
+## Listed at
+
+- [![M8ven Verified](https://m8ven.ai/badge/mcp/pedromarianoalmeida-ffmpeg-mcp-1dyzi2?variant=verified&v=4f94a6d3135c9fd77275bbcda948478c)](https://m8ven.ai/mcp/pedromarianoalmeida-ffmpeg-mcp-1dyzi2?s=readme)
+- [Agensi](https://www.agensi.io/skills/ffmpeg-media)
+- [MCP Rush](https://mcprush.com/pedromarianoalmeida/ffmpeg-mcp)
