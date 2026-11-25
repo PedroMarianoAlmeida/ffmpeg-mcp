@@ -1,8 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { cutVideo, imageToVideo, concatVideos, convert, ffmpegRaw, removeSilence } from "./lib.js";
 
+export function createServer() {
 const server = new McpServer({
   name: "ffmpeg",
   version: "1.0.3",
@@ -13,6 +15,12 @@ server.registerTool(
   "cut_video",
   {
     description: "Extract a segment from a video file",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       inputPath: z.string().describe("Path to input video file"),
       outputPath: z.string().describe("Path for output video file"),
@@ -52,6 +60,12 @@ server.registerTool(
   "image_to_video",
   {
     description: "Convert a static image to a video with fixed duration",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       imagePath: z.string().describe("Path to input image file"),
       outputPath: z.string().describe("Path for output video file"),
@@ -91,6 +105,12 @@ server.registerTool(
   "concat_videos",
   {
     description: "Concatenate multiple videos into one",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       inputPaths: z
         .array(z.string())
@@ -132,6 +152,12 @@ server.registerTool(
   {
     description:
       "Convert media between formats (audio-to-audio, video-to-video, or video-to-audio). Format is auto-detected from file extension.",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       inputPath: z.string().describe("Path to input media file"),
       outputPath: z
@@ -180,6 +206,12 @@ server.registerTool(
   {
     description:
       "Detect and remove silent segments from a video, keeping only non-silent parts",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       inputPath: z.string().describe("Path to input video file"),
       outputPath: z.string().describe("Path for output video file"),
@@ -244,6 +276,12 @@ server.registerTool(
   {
     description:
       "Run a restricted local FFmpeg command. Inputs and the final output must be workspace paths; network protocols, filters, and arbitrary FFmpeg options are not supported.",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       args: z
         .array(z.string())
@@ -279,13 +317,19 @@ server.registerTool(
   }
 );
 
+return server;
+}
+
 async function main() {
+  const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("FFmpeg MCP Server v1.0.3 running on stdio");
 }
 
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error("Fatal error in main():", error);
+    process.exit(1);
+  });
+}
