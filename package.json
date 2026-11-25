@@ -20,9 +20,9 @@
   "author": "Pedro Almeida",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.1",
-    "fluent-ffmpeg": "^2.1.3",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
